@@ -6,3 +6,9 @@ release_notes/
 .idea/
 .DS_Store
 dbt_packages/
+
+Lib/
+Scripts/
+dbt-env/
+package-lock.yml
+pyvenv.cfg
