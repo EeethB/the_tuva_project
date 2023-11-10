@@ -1,0 +1,170 @@
+version: 2
+
+models:
+## Intermediate
+  - name: hhs_hcc__int_all_conditions
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _int_all_conditions
+      tags: hhs_hcc
+      materialized: table
+    description: All historical conditions mapped to HCCs.
+    columns:
+      - name: patient_id
+        description: Unique ID for the patient.
+      - name: recorded_date
+        description: Date in which the condition was recorded.
+      - name: condition_type
+        description: The type of condition.
+      - name: icd_10_cm_code
+        description: The ICD-10-CM condition code.
+      - name: hcc_code
+        description: >
+          HCC code from the latest HHS HCC model available in the mart.
+      - name: hcc_description
+        description: >
+          HCC description from the latest HHS HCC model available in the mart.
+      - name: payment_year
+        description: >
+          The payment year the HCC and risk scores are being calculated for.
+      - name: tuva_last_run
+        description: The date the model was run.
+
+  - name: hhs_hcc__int_eligible_conditions
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _int_eligible_conditions
+      tags: hhs_hcc
+      materialized: table
+    description: >
+      Conditions from eligible risk-adjustable claims per claim type for the 
+      collection year.
+    columns:
+      - name: patient_id
+        description: Unique ID for the patient.
+      - name: condition_code
+        description: The condition code.
+        tests:
+          - not_null
+      - name: payment_year
+        description: >
+          The payment year the HCC and risk scores are being calculated for.
+      - name: tuva_last_run
+        description: The date the model was run.
+
+  - name: hhs_hcc__int_hcc_mapping
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _int_hcc_mapping
+      tags: hhs_hcc
+      materialized: table
+    description: >
+      Eligible conditions mapped to HCC codes for the corresponding HCC model 
+      version and payment year
+    columns:
+      - name: patient_id
+        description: Unique ID for the patient.
+      - name: condition_code
+        description: Condition code.
+      - name: hcc_code
+        description: HCC code.
+      - name: payment_year
+        description: >
+          The payment year the HCC and risk scores are being calculated for.
+      - name: tuva_last_run
+        description: The date the model was run.
+
+## Staging
+  - name: hhs_hcc__stg_core__condition
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _stg_condition
+      tags: hhs_hcc
+      materialized: ephemeral
+    description: Staging conditions from core.
+    columns:
+      - name: claim_id
+        description: Unique claim_id for each claim.
+      - name: patient_id
+        description: Unique patient_id for each person.
+      - name: recorded_date
+        description: Date in which the condition was recorded.
+      - name: condition_type
+        description: The type of condition.
+      - name: code_type
+        description: The type of condition code.
+      - name: code
+        description: The condition code.
+
+  - name: hhs_hcc__stg_core__eligibility
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _stg_eligibility
+      tags: hhs_hcc
+      materialized: ephemeral
+    description: Staging eligibility from core.
+    columns:
+      - name: patient_id
+        description: Unique identifier for each patient in the dataset.
+      - name: enrollment_start_date
+        description: Date the patient's insurance eligibility began.
+      - name: enrollment_end_date
+        description: Date the patient's insurance eligibility ended.
+      - name: dual_status_code
+        description: >
+          Indicates whether the patient is dually eligible for Medicare 
+          and Medicaid.
+      - name: medicare_status_code
+        description: Indicates how the patient became eligible for Medicare.
+
+  - name: hhs_hcc__stg_core__medical_claim
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _stg_medical_claim
+      tags: hhs_hcc
+      materialized: ephemeral
+    description: Staging medical claims from core.
+    columns:
+      - name: claim_id
+        description: Unique identifier for each claim.
+      - name: claim_line_number
+        description: >
+          Indicates the line number for the particular line of the claim.
+      - name: claim_type
+        description: >
+          Indicates whether the claim is professional (CMS-1500), 
+          institutional (UB-04), dental, or vision.
+      - name: patient_id
+        description: Unique identifier for each patient in the dataset.
+      - name: claim_start_date
+        description: Start date for the claim.
+      - name: claim_end_date
+        description: End date for the claim.
+      - name: bill_type_code
+        description: Bill type code for the claim (institutional claims only).
+      - name: hcpcs_code
+        description: HCPCS level 1 or level 2 code for the claim line.
+
+  - name: hhs_hcc__stg_core__patient
+    config:
+      schema: |
+        {%- if var('tuva_schema_prefix',None) != None -%}{{var('tuva_schema_prefix')}}_hhs_hcc{% else %}hhs_hcc{%- endif -%}
+      alias: _stg_patient
+      tags: hhs_hcc
+      materialized: ephemeral
+    description: Staging patient from core.
+    columns:
+      - name: patient_id
+        description: Unique identifier for each patient in the dataset.
+      - name: sex
+        description: Biological sex of the patient.
+      - name: birth_date
+        description: Date the patient was born.
+      - name: death_date
+        description: The death date of the patient if there is one.
